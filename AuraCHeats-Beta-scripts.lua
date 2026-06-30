@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
-    Name = "Main Script",
+    Name = "AuraCheats-Beta",
     LoadingTitle = "Загрузка...",
     LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-047",
+    Content = "Сделано разработчиком namesick\nВерсия Beta-001",
 })
 
 -- ============================================
