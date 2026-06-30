@@ -3,7 +3,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
-    Name = "AuraCheats-Beta",
+    Name = "Main Script",
     LoadingTitle = "Загрузка...",
     LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
@@ -865,11 +865,12 @@ for _, targetPlayer in ipairs(Players:GetPlayers()) do
 end
 
 -- ============================================
--- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ
+-- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ (ОТСОРТИРОВАННЫЙ)
 -- ============================================
 
 local SectionVisuals = TabVisuals:CreateSection("Настройки ESP")
 
+-- 1. Включить ESP
 local ESPToggle = TabVisuals:CreateToggle({
     Name = "Включить ESP",
     CurrentValue = false,
@@ -880,6 +881,19 @@ local ESPToggle = TabVisuals:CreateToggle({
     end,
 })
 
+-- 2. Ники
+local NameToggle = TabVisuals:CreateToggle({
+    Name = "Ники",
+    CurrentValue = false,
+    Flag = "VisualNameToggle",
+    Info = "Показывает имя игрока над головой",
+    Callback = function(Value)
+        espSettings.showName = Value
+        updateVisualsSettings()
+    end,
+})
+
+-- 3. Цвет ника
 local NameColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет ника",
     Color = Color3.fromRGB(255, 255, 255),
@@ -891,61 +905,7 @@ local NameColorPicker = TabVisuals:CreateColorPicker({
     end,
 })
 
-local SkeletonColorPicker = TabVisuals:CreateColorPicker({
-    Name = "Цвет скелета",
-    Color = Color3.fromRGB(0, 255, 255),
-    Flag = "VisualSkeletonColor",
-    Info = "Выбери цвет для скелета игрока",
-    Callback = function(Color)
-        espSettings.skeletonColor = Color
-        updateVisualsSettings()
-    end,
-})
-
-local HealthColorPicker = TabVisuals:CreateColorPicker({
-    Name = "Цвет здоровья",
-    Color = Color3.fromRGB(0, 255, 0),
-    Flag = "VisualHealthColor",
-    Info = "Выбери цвет для полоски здоровья",
-    Callback = function(Color)
-        espSettings.healthColor = Color
-        updateVisualsSettings()
-    end,
-})
-
-local NameToggle = TabVisuals:CreateToggle({
-    Name = "Показывать имена",
-    CurrentValue = false,
-    Flag = "VisualNameToggle",
-    Info = "Показывает имя игрока над головой",
-    Callback = function(Value)
-        espSettings.showName = Value
-        updateVisualsSettings()
-    end,
-})
-
-local SkeletonToggle = TabVisuals:CreateToggle({
-    Name = "Показывать скелет",
-    CurrentValue = false,
-    Flag = "VisualSkeletonToggle",
-    Info = "Показывает скелет игрока (контур)",
-    Callback = function(Value)
-        espSettings.showSkeleton = Value
-        updateVisualsSettings()
-    end,
-})
-
-local HealthToggle = TabVisuals:CreateToggle({
-    Name = "Показывать здоровье",
-    CurrentValue = false,
-    Flag = "VisualHealthToggle",
-    Info = "Показывает полоску здоровья над игроком",
-    Callback = function(Value)
-        espSettings.showHealth = Value
-        updateVisualsSettings()
-    end,
-})
-
+-- 4. Размер ника
 local NameSizeSlider = TabVisuals:CreateSlider({
     Name = "Размер ника",
     Range = {10, 40},
@@ -960,10 +920,55 @@ local NameSizeSlider = TabVisuals:CreateSlider({
     end,
 })
 
--- ============================================
--- TRACERS В СЕКЦИИ ESP
--- ============================================
+-- 5. Здоровье
+local HealthToggle = TabVisuals:CreateToggle({
+    Name = "Здоровье",
+    CurrentValue = false,
+    Flag = "VisualHealthToggle",
+    Info = "Показывает полоску здоровья над игроком",
+    Callback = function(Value)
+        espSettings.showHealth = Value
+        updateVisualsSettings()
+    end,
+})
 
+-- 6. Цвет здоровья
+local HealthColorPicker = TabVisuals:CreateColorPicker({
+    Name = "Цвет здоровья",
+    Color = Color3.fromRGB(0, 255, 0),
+    Flag = "VisualHealthColor",
+    Info = "Выбери цвет для полоски здоровья",
+    Callback = function(Color)
+        espSettings.healthColor = Color
+        updateVisualsSettings()
+    end,
+})
+
+-- 7. Скелет
+local SkeletonToggle = TabVisuals:CreateToggle({
+    Name = "Скелет",
+    CurrentValue = false,
+    Flag = "VisualSkeletonToggle",
+    Info = "Показывает скелет игрока (контур)",
+    Callback = function(Value)
+        espSettings.showSkeleton = Value
+        updateVisualsSettings()
+    end,
+})
+
+-- 8. Цвет скелета
+local SkeletonColorPicker = TabVisuals:CreateColorPicker({
+    Name = "Цвет скелета",
+    Color = Color3.fromRGB(0, 255, 255),
+    Flag = "VisualSkeletonColor",
+    Info = "Выбери цвет для скелета игрока",
+    Callback = function(Color)
+        espSettings.skeletonColor = Color
+        updateVisualsSettings()
+    end,
+})
+
+-- 9. Tracers (линии к игрокам)
 local TracersToggle = TabVisuals:CreateToggle({
     Name = "Tracers (линии к игрокам)",
     CurrentValue = false,
@@ -975,6 +980,7 @@ local TracersToggle = TabVisuals:CreateToggle({
     end,
 })
 
+-- 10. Цвет Tracers
 local TracersColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет Tracers",
     Color = Color3.fromRGB(0, 255, 0),
@@ -988,6 +994,7 @@ local TracersColorPicker = TabVisuals:CreateColorPicker({
     end,
 })
 
+-- 11. Толщина Tracers
 local TracersThicknessSlider = TabVisuals:CreateSlider({
     Name = "Толщина Tracers",
     Range = {1, 5},
