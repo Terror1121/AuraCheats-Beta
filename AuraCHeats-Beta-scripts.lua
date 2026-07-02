@@ -1,6 +1,6 @@
 -- ============================================
 -- AURACHEATS С КЛЮЧ-СИСТЕМОЙ (АВТО-АКТИВАЦИЯ)
--- Версия: Beta-005
+-- Версия: Beta-006
 -- ============================================
 
 -- ============================================
@@ -145,50 +145,34 @@ local function loadMainMenu()
     local TabPr = Window:CreateTab("Прочее", "wrench")
 
     -- ============================================
-    -- СЕКЦИЯ: ИНФОРМАЦИЯ С ТАЙМЕРОМ
+    -- СЕКЦИЯ: ИНФОРМАЦИЯ (БЕЗ ТАЙМЕРА)
     -- ============================================
     local SectionInfo = TabInf:CreateSection("О чите")
 
     local InfoParagraph = TabInf:CreateParagraph({
         Title = "Информация",
-        Content = "Сделано разработчиком namesick\nВерсия Beta-005\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
+        Content = "Сделано разработчиком namesick\nВерсия Beta-006\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
     })
 
-    -- ✅ СОЗДАЁМ ТАЙМЕР
-    local timerLabel = TabInf:CreateParagraph({
-        Title = "⏱ Осталось времени",
-        Content = "Загрузка..."
-    })
-
-    -- ✅ ФУНКЦИЯ ОБНОВЛЕНИЯ ТАЙМЕРА (БЕЗ ОШИБОК)
-    local function updateTimer()
-        if keyData.isValid and keyData.expirationDate then
-            local remaining = keyData.expirationDate - os.time()
-            if remaining > 0 then
-                local timeStr = formatTime(remaining)
-                if timeStr then
-                    timerLabel:Set("⏱ " .. timeStr)
-                else
-                    timerLabel:Set("⏱ Ошибка расчета")
-                end
-            else
-                timerLabel:Set("❌ Ключ истек! Перезапустите скрипт.")
-            end
-        else
-            timerLabel:Set("⏳ Ключ не активирован")
-        end
-    end
-
-    -- ✅ ЗАПУСКАЕМ ТАЙМЕР
-    updateTimer()
-    game:GetService("RunService").Heartbeat:Connect(updateTimer)
-
-    -- ✅ ДАТЫ (ТОЛЬКО ЕСЛИ КЛЮЧ АКТИВЕН)
+    -- ✅ ПРОСТО ПОКАЗЫВАЕМ ОСТАВШЕЕСЯ ВРЕМЯ (БЕЗ АВТО-ОБНОВЛЕНИЯ)
     if keyData.isValid and keyData.expirationDate then
+        local remaining = keyData.expirationDate - os.time()
+        local timeStr = formatTime(remaining)
+        
+        local timerLabel = TabInf:CreateParagraph({
+            Title = "⏱ Осталось времени",
+            Content = timeStr or "Ошибка расчета"
+        })
+
         local KeyInfo = TabInf:CreateParagraph({
             Title = "📅 Даты",
             Content = "Активирован: " .. os.date("%d.%m.%Y %H:%M", keyData.activationDate) .. 
                       "\nИстекает: " .. os.date("%d.%m.%Y %H:%M", keyData.expirationDate)
+        })
+    else
+        local timerLabel = TabInf:CreateParagraph({
+            Title = "⏱ Статус ключа",
+            Content = "⏳ Ключ не активирован"
         })
     end
 
