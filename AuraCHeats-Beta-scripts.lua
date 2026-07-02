@@ -122,13 +122,24 @@ end
 -- ============================================
 
 local function updateTimerText(timerLabel)
-    if keyData.isValid and keyData.expirationDate then
+    if not timerLabel then
+        return
+    end
+    
+    if keyData and keyData.isValid and keyData.expirationDate then
         local remaining = keyData.expirationDate - os.time()
         if remaining > 0 then
-            timerLabel:Set("⏱ " .. formatTime(remaining))
+            local timeStr = formatTime(remaining)
+            if timeStr then
+                timerLabel:Set("⏱ " .. timeStr)
+            else
+                timerLabel:Set("⏱ Ошибка расчета времени")
+            end
         else
             timerLabel:Set("❌ Ключ истек! Перезапустите скрипт.")
         end
+    else
+        timerLabel:Set("⏱ Данные ключа не загружены")
     end
 end
 
