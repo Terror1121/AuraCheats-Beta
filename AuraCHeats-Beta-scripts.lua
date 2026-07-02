@@ -125,32 +125,6 @@ local function activateKeyThroughBot(key)
 end
 
 -- ============================================
--- ОБНОВЛЕНИЕ ТАЙМЕРА (ИСПРАВЛЕНО)
--- ============================================
-
-local function updateTimerText(timerLabel)
-    if not timerLabel then
-        return
-    end
-    
-    if keyData and keyData.isValid and keyData.expirationDate then
-        local remaining = keyData.expirationDate - os.time()
-        if remaining > 0 then
-            local timeStr = formatTime(remaining)
-            if timeStr then
-                timerLabel:Set("⏱ " .. timeStr)
-            else
-                timerLabel:Set("⏱ Ошибка расчета времени")
-            end
-        else
-            timerLabel:Set("❌ Ключ истек! Перезапустите скрипт.")
-        end
-    else
-        timerLabel:Set("⏱ Данные ключа не загружены")
-    end
-end
-
--- ============================================
 -- ОСНОВНОЕ МЕНЮ
 -- ============================================
 
@@ -180,28 +154,37 @@ local function loadMainMenu()
         Content = "Сделано разработчиком namesick\nВерсия Beta-004\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
     })
 
-    -- Таймер только если ключ валиден
-    if keyData.isValid and keyData.expirationDate then
-        local timerLabel = TabInf:CreateParagraph({
-            Title = "⏱ Осталось времени",
-            Content = "Загрузка..."
-        })
+    -- Таймер создаётся всегда
+    local timerLabel = TabInf:CreateParagraph({
+        Title = "⏱ Осталось времени",
+        Content = "Загрузка..."
+    })
 
-        game:GetService("RunService").Heartbeat:Connect(function()
-            if keyData.isValid then
-                updateTimerText(timerLabel)
+    -- Обновление таймера
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if keyData.isValid and keyData.expirationDate then
+            local remaining = keyData.expirationDate - os.time()
+            if remaining > 0 then
+                local timeStr = formatTime(remaining)
+                if timeStr then
+                    timerLabel:Set("⏱ " .. timeStr)
+                else
+                    timerLabel:Set("⏱ Ошибка расчета времени")
+                end
+            else
+                timerLabel:Set("❌ Ключ истек! Перезапустите скрипт.")
             end
-        end)
+        else
+            timerLabel:Set("⏳ Ключ не активирован или данные отсутствуют")
+        end
+    end)
 
+    -- Даты (только если ключ валиден)
+    if keyData.isValid and keyData.expirationDate then
         local KeyInfo = TabInf:CreateParagraph({
             Title = "📅 Даты",
             Content = "Активирован: " .. os.date("%d.%m.%Y %H:%M", keyData.activationDate) .. 
                       "\nИстекает: " .. os.date("%d.%m.%Y %H:%M", keyData.expirationDate)
-        })
-    else
-        local timerLabel = TabInf:CreateParagraph({
-            Title = "⏱ Статус ключа",
-            Content = "⏳ Ключ не активирован или данные отсутствуют"
         })
     end
 
