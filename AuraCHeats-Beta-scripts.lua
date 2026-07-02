@@ -159,7 +159,7 @@ local function loadMainMenu()
 
     local InfoParagraph = TabInf:CreateParagraph({
         Title = "Информация",
-        Content = "Сделано разработчиком namesick\nВерсия Beta-002\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/твоя_ссылка",
+        Content = "Сделано разработчиком namesick\nВерсия Beta-002\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
     })
 
     local timerLabel = TabInf:CreateParagraph({
@@ -1300,7 +1300,7 @@ local function showKeyWindow()
     supportLabel.Size = UDim2.new(1, -40, 0, 20)
     supportLabel.Position = UDim2.new(0, 20, 0, 245)
     supportLabel.BackgroundTransparency = 1
-    supportLabel.Text = "По вопросам ключей: discord.gg/твоя_ссылка"
+    supportLabel.Text = "По вопросам ключей: discord.gg/XPwdHN4jHf"
     supportLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
     supportLabel.TextSize = 11
     supportLabel.Font = Enum.Font.Gotham
