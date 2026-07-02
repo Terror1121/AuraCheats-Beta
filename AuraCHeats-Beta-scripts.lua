@@ -270,7 +270,7 @@ local function showKeyWindow()
         
         statusLabel.Text = "⏳ Проверка ключа..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-        activateBtn.Enabled = false
+        activateBtn.Active = false
         activateBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
         
         task.spawn(function()
