@@ -1,6 +1,6 @@
 -- ============================================
 -- AURACHEATS С КЛЮЧ-СИСТЕМОЙ (АВТО-АКТИВАЦИЯ)
--- Версия: Beta-002
+-- Версия: Beta-003
 -- ============================================
 
 -- ============================================
@@ -170,7 +170,7 @@ local function loadMainMenu()
 
     local InfoParagraph = TabInf:CreateParagraph({
         Title = "Информация",
-        Content = "Сделано разработчиком namesick\nВерсия Beta-002\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
+        Content = "Сделано разработчиком namesick\nВерсия Beta-003\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
     })
 
     local timerLabel = TabInf:CreateParagraph({
