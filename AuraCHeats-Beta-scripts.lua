@@ -1,6 +1,6 @@
 -- ============================================
--- AURACHEATS С КЛЮЧ-СИСТЕМОЙ
--- Версия: Beta-001
+-- AURACHEATS С КЛЮЧ-СИСТЕМОЙ (АВТО-АКТИВАЦИЯ)
+-- Версия: Beta-002
 -- ============================================
 
 -- ============================================
@@ -8,7 +8,7 @@
 -- ============================================
 
 local KEY_CONFIG = {
-    KEYS_URL = "https://raw.githubusercontent.com/Terror1121/aura-cheats-keys/main/keys.txt",
+    BOT_URL = "https://aura-cheats-bot.onrender.com/activate",
     VALIDITY_DAYS = 7,
     SAVE_FILE = "AuraCheatsKeyData",
     MAX_ATTEMPTS = 3
@@ -26,7 +26,7 @@ local keyData = {
 }
 
 local function parseDate(dateString)
-    if dateString == "НЕ_АКТИВИРОВАН" or not dateString then return nil end
+    if not dateString then return nil end
     local year, month, day, hour, minute, second = dateString:match("(%d+)-(%d+)-(%d+)_(%d+):(%d+):(%d+)")
     if year and month and day and hour and minute and second then
         return os.time({
@@ -80,261 +80,56 @@ local function loadKeyData()
     return nil
 end
 
-local function getKeysList()
+-- ============================================
+-- АКТИВАЦИЯ КЛЮЧА ЧЕРЕЗ БОТА
+-- ============================================
+
+local function activateKeyThroughBot(key)
+    local player = game.Players.LocalPlayer
+    local url = KEY_CONFIG.BOT_URL .. "?key=" .. key .. "&user=" .. player.Name
+    
     local success, response = pcall(function()
-        return game:HttpGet(KEY_CONFIG.KEYS_URL)
+        return game:HttpGet(url)
     end)
     
     if not success then
-        return nil, "❌ Ошибка подключения к серверу"
+        return false, nil, nil, "❌ Ошибка подключения к серверу"
     end
     
-    local keyList = {}
-    for line in response:gmatch("[^\r\n]+") do
-        local key, status = line:match("^([^:]+):(.+)$")
-        if key and status then
-            keyList[key] = status
-        end
-    end
-    return keyList, nil
-end
-
-local function validateKey(inputKey)
-    local keyList, err = getKeysList()
-    if not keyList then
-        return false, nil, nil, err
-    end
+    local data = game:GetService("HttpService"):JSONDecode(response)
     
-    if keyList[inputKey] then
-        local status = keyList[inputKey]
-        
-        if status == "НЕ_АКТИВИРОВАН" then
-            local activationTime = os.time()
-            local expirationTime = activationTime + (KEY_CONFIG.VALIDITY_DAYS * 86400)
-            return true, activationTime, expirationTime, "✅ Ключ активирован! Действует " .. KEY_CONFIG.VALIDITY_DAYS .. " дней"
-        else
-            local expTime = parseDate(status)
-            if expTime then
-                if os.time() < expTime then
-                    local activationTime = expTime - (KEY_CONFIG.VALIDITY_DAYS * 86400)
-                    return true, activationTime, expTime, "✅ Ключ активен"
-                else
-                    return false, nil, nil, "❌ Срок действия ключа истек"
-                end
-            end
+    if data.status == "success" then
+        local expTime = parseDate(data.expires)
+        if expTime then
+            local activationTime = expTime - (KEY_CONFIG.VALIDITY_DAYS * 86400)
+            return true, activationTime, expTime, "✅ Ключ активирован! Действует " .. KEY_CONFIG.VALIDITY_DAYS .. " дней"
         end
+        return true, os.time(), os.time() + (KEY_CONFIG.VALIDITY_DAYS * 86400), "✅ Ключ активирован!"
+    elseif data.status == "active" then
+        local expTime = parseDate(data.expires)
+        if expTime and os.time() < expTime then
+            local activationTime = expTime - (KEY_CONFIG.VALIDITY_DAYS * 86400)
+            return true, activationTime, expTime, "✅ Ключ активен"
+        end
+        return false, nil, nil, "❌ Срок действия ключа истек"
     else
-        return false, nil, nil, "❌ Неверный ключ"
+        return false, nil, nil, data.message or "❌ Ошибка активации"
     end
-    
-    return false, nil, nil, "❌ Ошибка проверки ключа"
 end
 
 -- ============================================
--- GUI ДЛЯ ВВОДА КЛЮЧА
+-- ОБНОВЛЕНИЕ ТАЙМЕРА
 -- ============================================
 
-local function showKeyWindow()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "KeySystem"
-    screenGui.Parent = game.Players.LocalPlayer.PlayerGui
-    screenGui.ResetOnSpawn = false
-    
-    local overlay = Instance.new("Frame")
-    overlay.Size = UDim2.new(1, 0, 1, 0)
-    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    overlay.BackgroundTransparency = 0.5
-    overlay.Parent = screenGui
-    
-    local background = Instance.new("Frame")
-    background.Size = UDim2.new(0, 450, 0, 380)
-    background.Position = UDim2.new(0.5, -225, 0.5, -190)
-    background.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    background.BackgroundTransparency = 0.05
-    background.BorderSizePixel = 2
-    background.BorderColor3 = Color3.fromRGB(100, 100, 255)
-    background.Parent = screenGui
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = background
-    
-    local icon = Instance.new("TextLabel")
-    icon.Size = UDim2.new(0, 60, 0, 60)
-    icon.Position = UDim2.new(0.5, -30, 0, 10)
-    icon.BackgroundTransparency = 1
-    icon.Text = "🔐"
-    icon.TextSize = 40
-    icon.Font = Enum.Font.Gotham
-    icon.Parent = background
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 40)
-    title.Position = UDim2.new(0, 0, 0, 70)
-    title.BackgroundTransparency = 1
-    title.Text = "Активация AuraCheats"
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 24
-    title.Font = Enum.Font.GothamBold
-    title.Parent = background
-    
-    local subtitle = Instance.new("TextLabel")
-    subtitle.Size = UDim2.new(1, -40, 0, 20)
-    subtitle.Position = UDim2.new(0, 20, 0, 115)
-    subtitle.BackgroundTransparency = 1
-    subtitle.Text = "Введите ключ для активации чита"
-    subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
-    subtitle.TextSize = 14
-    subtitle.Font = Enum.Font.Gotham
-    subtitle.Parent = background
-    
-    local infoLabel = Instance.new("TextLabel")
-    infoLabel.Size = UDim2.new(1, -40, 0, 20)
-    infoLabel.Position = UDim2.new(0, 20, 0, 140)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.Text = "Срок действия: " .. KEY_CONFIG.VALIDITY_DAYS .. " дней с момента активации"
-    infoLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
-    infoLabel.TextSize = 12
-    infoLabel.Font = Enum.Font.Gotham
-    infoLabel.Parent = background
-    
-    local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(1, -40, 0, 45)
-    inputBox.Position = UDim2.new(0, 20, 0, 170)
-    inputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    inputBox.BorderSizePixel = 1
-    inputBox.BorderColor3 = Color3.fromRGB(80, 80, 200)
-    inputBox.Text = ""
-    inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    inputBox.TextSize = 18
-    inputBox.Font = Enum.Font.Gotham
-    inputBox.PlaceholderText = "Введите ключ..."
-    inputBox.ClearTextOnFocus = false
-    inputBox.Parent = background
-    
-    local inputCorner = Instance.new("UICorner")
-    inputCorner.CornerRadius = UDim.new(0, 8)
-    inputCorner.Parent = inputBox
-    
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(1, -40, 0, 25)
-    statusLabel.Position = UDim2.new(0, 20, 0, 220)
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "Введите ключ для активации"
-    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    statusLabel.TextSize = 12
-    statusLabel.Font = Enum.Font.Gotham
-    statusLabel.Parent = background
-    
-    local supportLabel = Instance.new("TextLabel")
-    supportLabel.Size = UDim2.new(1, -40, 0, 20)
-    supportLabel.Position = UDim2.new(0, 20, 0, 245)
-    supportLabel.BackgroundTransparency = 1
-    supportLabel.Text = "По вопросам ключей: discord.gg/XPwdHN4jHf"
-    supportLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
-    supportLabel.TextSize = 11
-    supportLabel.Font = Enum.Font.Gotham
-    supportLabel.Parent = background
-    
-    local activateBtn = Instance.new("TextButton")
-    activateBtn.Size = UDim2.new(0, 180, 0, 45)
-    activateBtn.Position = UDim2.new(0.5, -90, 0, 280)
-    activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
-    activateBtn.BorderSizePixel = 0
-    activateBtn.Text = "Активировать"
-    activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    activateBtn.TextSize = 16
-    activateBtn.Font = Enum.Font.GothamBold
-    activateBtn.Parent = background
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = activateBtn
-    
-    activateBtn.MouseEnter:Connect(function()
-        activateBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 220)
-    end)
-    activateBtn.MouseLeave:Connect(function()
-        activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
-    end)
-    
-    local attempts = 0
-    
-    activateBtn.MouseButton1Click:Connect(function()
-        local key = inputBox.Text
-        if key == "" then
-            statusLabel.Text = "❌ Введите ключ!"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-            return
-        end
-        
-        statusLabel.Text = "⏳ Проверка ключа..."
-        statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-        activateBtn.Active = false
-        activateBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        
-        task.spawn(function()
-            local valid, activationTime, expTime, message = validateKey(key)
-            
-            if valid then
-                statusLabel.Text = message
-                statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-                
-                keyData.isValid = true
-                keyData.key = key
-                keyData.activationDate = activationTime
-                keyData.expirationDate = expTime
-                
-                local saveData = {
-                    key = key,
-                    activationDate = activationTime,
-                    expirationDate = expTime
-                }
-                saveKeyData(saveData)
-                
-                task.wait(1.5)
-                screenGui:Destroy()
-                loadMainMenu()
-            else
-                attempts = attempts + 1
-                statusLabel.Text = message or "❌ Ошибка активации"
-                statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-                activateBtn.Enabled = true
-                activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
-                
-                if attempts >= KEY_CONFIG.MAX_ATTEMPTS then
-                    statusLabel.Text = "❌ Превышено количество попыток!"
-                    activateBtn.Enabled = false
-                    activateBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-                end
-            end
-        end)
-    end)
-    
-    inputBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            activateBtn.MouseButton1Click:Fire()
-        end
-    end)
-end
-
--- ============================================
--- ПРОВЕРКА СОХРАНЕННОГО КЛЮЧА
--- ============================================
-
-local function checkSavedKey()
-    local savedData = loadKeyData()
-    if savedData and savedData.key and savedData.expirationDate then
-        local currentTime = os.time()
-        if currentTime < savedData.expirationDate then
-            keyData.isValid = true
-            keyData.key = savedData.key
-            keyData.activationDate = savedData.activationDate
-            keyData.expirationDate = savedData.expirationDate
-            return true
+local function updateTimerText(timerLabel)
+    if keyData.isValid and keyData.expirationDate then
+        local remaining = keyData.expirationDate - os.time()
+        if remaining > 0 then
+            timerLabel:Set("⏱ " .. formatTime(remaining))
+        else
+            timerLabel:Set("❌ Ключ истек! Перезапустите скрипт.")
         end
     end
-    return false
 end
 
 -- ============================================
@@ -342,10 +137,8 @@ end
 -- ============================================
 
 local function loadMainMenu()
-    -- 1. Загружаем библиотеку
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-    -- 2. Создаем главное окно
     local Window = Rayfield:CreateWindow({
         Name = "AuraCheats-Beta",
         LoadingTitle = "Загрузка...",
@@ -354,7 +147,6 @@ local function loadMainMenu()
         ToggleUIKeybind = Enum.KeyCode.G,
     })
 
-    -- 3. Создаем вкладки
     local TabInf = Window:CreateTab("Информация", "info")
     local Tab = Window:CreateTab("Игрок", "user-round")
     local TabVisuals = Window:CreateTab("Визуал", "scan-eye")
@@ -367,34 +159,20 @@ local function loadMainMenu()
 
     local InfoParagraph = TabInf:CreateParagraph({
         Title = "Информация",
-        Content = "Сделано разработчиком namesick\nВерсия Beta-001\n\n✅ Ключ активирован\n📱 Поддержка: @ваш_телеграм_канал",
+        Content = "Сделано разработчиком namesick\nВерсия Beta-002\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/твоя_ссылка",
     })
 
-    -- Таймер
     local timerLabel = TabInf:CreateParagraph({
         Title = "⏱ Осталось времени",
         Content = "Загрузка..."
     })
 
-    local function updateTimer()
-        if keyData.isValid and keyData.expirationDate then
-            local remaining = keyData.expirationDate - os.time()
-            if remaining > 0 then
-                timerLabel:SetContent("⏱ " .. formatTime(remaining))
-            else
-                timerLabel:SetContent("❌ Ключ истек! Перезапустите скрипт.")
-            end
-        end
-    end
-
-    -- Обновляем таймер каждую секунду
     game:GetService("RunService").Heartbeat:Connect(function()
         if keyData.isValid then
-            updateTimer()
+            updateTimerText(timerLabel)
         end
     end)
 
-    -- Информация о датах
     local KeyInfo = TabInf:CreateParagraph({
         Title = "📅 Даты",
         Content = "Активирован: " .. os.date("%d.%m.%Y %H:%M", keyData.activationDate) .. 
@@ -769,7 +547,7 @@ local function loadMainMenu()
     }
 
     -- ============================================
-    -- TRACERS ФУНКЦИИ
+    -- TRACERS
     -- ============================================
 
     local tracerObjects = {}
@@ -880,7 +658,7 @@ local function loadMainMenu()
     end
 
     -- ============================================
-    -- ESP ФУНКЦИИ
+    -- ESP
     -- ============================================
 
     local function getPart(char, partName)
@@ -1240,12 +1018,11 @@ local function loadMainMenu()
     end
 
     -- ============================================
-    -- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ (ОТСОРТИРОВАННЫЙ)
+    -- ИНТЕРФЕЙС ВИЗУАЛ
     -- ============================================
 
     local SectionVisuals = TabVisuals:CreateSection("Настройки ESP")
 
-    -- 1. Включить ESP
     local ESPToggle = TabVisuals:CreateToggle({
         Name = "Включить ESP",
         CurrentValue = false,
@@ -1256,7 +1033,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 2. Ники
     local NameToggle = TabVisuals:CreateToggle({
         Name = "Ники",
         CurrentValue = false,
@@ -1268,7 +1044,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 3. Цвет ника
     local NameColorPicker = TabVisuals:CreateColorPicker({
         Name = "Цвет ника",
         Color = Color3.fromRGB(255, 255, 255),
@@ -1280,7 +1055,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 4. Размер ника
     local NameSizeSlider = TabVisuals:CreateSlider({
         Name = "Размер ника",
         Range = {10, 40},
@@ -1295,7 +1069,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 5. Здоровье
     local HealthToggle = TabVisuals:CreateToggle({
         Name = "Здоровье",
         CurrentValue = false,
@@ -1307,7 +1080,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 6. Цвет здоровья
     local HealthColorPicker = TabVisuals:CreateColorPicker({
         Name = "Цвет здоровья",
         Color = Color3.fromRGB(0, 255, 0),
@@ -1319,7 +1091,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 7. Скелет
     local SkeletonToggle = TabVisuals:CreateToggle({
         Name = "Скелет",
         CurrentValue = false,
@@ -1331,7 +1102,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 8. Цвет скелета
     local SkeletonColorPicker = TabVisuals:CreateColorPicker({
         Name = "Цвет скелета",
         Color = Color3.fromRGB(0, 255, 255),
@@ -1343,7 +1113,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 9. Tracers (линии к игрокам)
     local TracersToggle = TabVisuals:CreateToggle({
         Name = "Tracers (линии к игрокам)",
         CurrentValue = false,
@@ -1355,7 +1124,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 10. Цвет Tracers
     local TracersColorPicker = TabVisuals:CreateColorPicker({
         Name = "Цвет Tracers",
         Color = Color3.fromRGB(0, 255, 0),
@@ -1369,7 +1137,6 @@ local function loadMainMenu()
         end,
     })
 
-    -- 11. Толщина Tracers
     local TracersThicknessSlider = TabVisuals:CreateSlider({
         Name = "Толщина Tracers",
         Range = {1, 5},
@@ -1404,7 +1171,7 @@ local function loadMainMenu()
     })
 
     -- ============================================
-    -- ОБРАБОТЧИКИ КЛАВИШ
+    -- КЛАВИШИ
     -- ============================================
 
     userInput.InputBegan:Connect(function(input, gameProcessed)
@@ -1425,9 +1192,6 @@ local function loadMainMenu()
         end
     end)
 
-    -- ============================================
-    -- ВЫВОД В КОНСОЛЬ
-    -- ============================================
     print("✅ Меню загружено! Нажми G для открытия.")
     print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
     print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
@@ -1437,10 +1201,217 @@ local function loadMainMenu()
 end
 
 -- ============================================
--- ЗАПУСК СКРИПТА
+-- GUI ДЛЯ ВВОДА КЛЮЧА
 -- ============================================
 
--- Проверяем сохраненный ключ
+local function showKeyWindow()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "KeySystem"
+    screenGui.Parent = game.Players.LocalPlayer.PlayerGui
+    screenGui.ResetOnSpawn = false
+
+    local overlay = Instance.new("Frame")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.Parent = screenGui
+
+    local background = Instance.new("Frame")
+    background.Size = UDim2.new(0, 450, 0, 380)
+    background.Position = UDim2.new(0.5, -225, 0.5, -190)
+    background.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    background.BackgroundTransparency = 0.05
+    background.BorderSizePixel = 2
+    background.BorderColor3 = Color3.fromRGB(100, 100, 255)
+    background.Parent = screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = background
+
+    local icon = Instance.new("TextLabel")
+    icon.Size = UDim2.new(0, 60, 0, 60)
+    icon.Position = UDim2.new(0.5, -30, 0, 10)
+    icon.BackgroundTransparency = 1
+    icon.Text = "🔐"
+    icon.TextSize = 40
+    icon.Font = Enum.Font.Gotham
+    icon.Parent = background
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 70)
+    title.BackgroundTransparency = 1
+    title.Text = "Активация AuraCheats"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 24
+    title.Font = Enum.Font.GothamBold
+    title.Parent = background
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, -40, 0, 20)
+    subtitle.Position = UDim2.new(0, 20, 0, 115)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "Введите ключ для активации чита"
+    subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
+    subtitle.TextSize = 14
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.Parent = background
+
+    local infoLabel = Instance.new("TextLabel")
+    infoLabel.Size = UDim2.new(1, -40, 0, 20)
+    infoLabel.Position = UDim2.new(0, 20, 0, 140)
+    infoLabel.BackgroundTransparency = 1
+    infoLabel.Text = "Срок действия: " .. KEY_CONFIG.VALIDITY_DAYS .. " дней с момента активации"
+    infoLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
+    infoLabel.TextSize = 12
+    infoLabel.Font = Enum.Font.Gotham
+    infoLabel.Parent = background
+
+    local inputBox = Instance.new("TextBox")
+    inputBox.Size = UDim2.new(1, -40, 0, 45)
+    inputBox.Position = UDim2.new(0, 20, 0, 170)
+    inputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    inputBox.BorderSizePixel = 1
+    inputBox.BorderColor3 = Color3.fromRGB(80, 80, 200)
+    inputBox.Text = ""
+    inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    inputBox.TextSize = 18
+    inputBox.Font = Enum.Font.Gotham
+    inputBox.PlaceholderText = "Введите ключ..."
+    inputBox.ClearTextOnFocus = false
+    inputBox.Parent = background
+
+    local inputCorner = Instance.new("UICorner")
+    inputCorner.CornerRadius = UDim.new(0, 8)
+    inputCorner.Parent = inputBox
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, -40, 0, 25)
+    statusLabel.Position = UDim2.new(0, 20, 0, 220)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "Введите ключ для активации"
+    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    statusLabel.TextSize = 12
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Parent = background
+
+    local supportLabel = Instance.new("TextLabel")
+    supportLabel.Size = UDim2.new(1, -40, 0, 20)
+    supportLabel.Position = UDim2.new(0, 20, 0, 245)
+    supportLabel.BackgroundTransparency = 1
+    supportLabel.Text = "По вопросам ключей: discord.gg/твоя_ссылка"
+    supportLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
+    supportLabel.TextSize = 11
+    supportLabel.Font = Enum.Font.Gotham
+    supportLabel.Parent = background
+
+    local activateBtn = Instance.new("TextButton")
+    activateBtn.Size = UDim2.new(0, 180, 0, 45)
+    activateBtn.Position = UDim2.new(0.5, -90, 0, 280)
+    activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
+    activateBtn.BorderSizePixel = 0
+    activateBtn.Text = "Активировать"
+    activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    activateBtn.TextSize = 16
+    activateBtn.Font = Enum.Font.GothamBold
+    activateBtn.Parent = background
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = activateBtn
+
+    activateBtn.MouseEnter:Connect(function()
+        activateBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 220)
+    end)
+    activateBtn.MouseLeave:Connect(function()
+        activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
+    end)
+
+    local attempts = 0
+
+    activateBtn.MouseButton1Click:Connect(function()
+        local key = inputBox.Text
+        if key == "" then
+            statusLabel.Text = "❌ Введите ключ!"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+            return
+        end
+
+        statusLabel.Text = "⏳ Проверка ключа..."
+        statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+
+        activateBtn.Active = false
+        activateBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+
+        task.spawn(function()
+            local valid, activationTime, expTime, message = activateKeyThroughBot(key)
+
+            if valid then
+                statusLabel.Text = message
+                statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+
+                keyData.isValid = true
+                keyData.key = key
+                keyData.activationDate = activationTime
+                keyData.expirationDate = expTime
+
+                local saveData = {
+                    key = key,
+                    activationDate = activationTime,
+                    expirationDate = expTime
+                }
+                saveKeyData(saveData)
+
+                task.wait(1.5)
+                screenGui:Destroy()
+                loadMainMenu()
+            else
+                attempts = attempts + 1
+                statusLabel.Text = message or "❌ Ошибка активации"
+                statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+                activateBtn.Active = true
+                activateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
+
+                if attempts >= KEY_CONFIG.MAX_ATTEMPTS then
+                    statusLabel.Text = "❌ Превышено количество попыток!"
+                    activateBtn.Active = false
+                    activateBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+                end
+            end
+        end)
+    end)
+
+    inputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            activateBtn.MouseButton1Click:Fire()
+        end
+    end)
+end
+
+-- ============================================
+-- ПРОВЕРКА СОХРАНЕННОГО КЛЮЧА
+-- ============================================
+
+local function checkSavedKey()
+    local savedData = loadKeyData()
+    if savedData and savedData.key and savedData.expirationDate then
+        local currentTime = os.time()
+        if currentTime < savedData.expirationDate then
+            keyData.isValid = true
+            keyData.key = savedData.key
+            keyData.activationDate = savedData.activationDate
+            keyData.expirationDate = savedData.expirationDate
+            return true
+        end
+    end
+    return false
+end
+
+-- ============================================
+-- ЗАПУСК
+-- ============================================
+
 if checkSavedKey() then
     print("✅ Ключ загружен из сохранения")
     print("📅 Действует до: " .. os.date("%d.%m.%Y %H:%M:%S", keyData.expirationDate))
