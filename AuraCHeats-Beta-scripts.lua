@@ -42,7 +42,14 @@ local function parseDate(dateString)
 end
 
 local function formatTime(seconds)
-    if seconds < 0 then return "⏰ Истек" end
+    if not seconds or type(seconds) ~= "number" then
+        return "Ошибка времени"
+    end
+    
+    if seconds < 0 then
+        return "Истек"
+    end
+    
     local days = math.floor(seconds / 86400)
     local hours = math.floor((seconds % 86400) / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
@@ -118,7 +125,7 @@ local function activateKeyThroughBot(key)
 end
 
 -- ============================================
--- ОБНОВЛЕНИЕ ТАЙМЕРА
+-- ОБНОВЛЕНИЕ ТАЙМЕРА (ИСПРАВЛЕНО)
 -- ============================================
 
 local function updateTimerText(timerLabel)
@@ -164,7 +171,7 @@ local function loadMainMenu()
     local TabPr = Window:CreateTab("Прочее", "wrench")
 
     -- ============================================
-    -- СЕКЦИЯ: ИНФОРМАЦИЯ С ТАЙМЕРОМ
+    -- СЕКЦИЯ: ИНФОРМАЦИЯ С ТАЙМЕРОМ (ИСПРАВЛЕНО)
     -- ============================================
     local SectionInfo = TabInf:CreateSection("О чите")
 
@@ -173,22 +180,30 @@ local function loadMainMenu()
         Content = "Сделано разработчиком namesick\nВерсия Beta-003\n\n✅ Ключ активирован\n📱 Поддержка: discord.gg/XPwdHN4jHf",
     })
 
-    local timerLabel = TabInf:CreateParagraph({
-        Title = "⏱ Осталось времени",
-        Content = "Загрузка..."
-    })
+    -- Таймер только если ключ валиден
+    if keyData.isValid and keyData.expirationDate then
+        local timerLabel = TabInf:CreateParagraph({
+            Title = "⏱ Осталось времени",
+            Content = "Загрузка..."
+        })
 
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if keyData.isValid then
-            updateTimerText(timerLabel)
-        end
-    end)
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if keyData.isValid then
+                updateTimerText(timerLabel)
+            end
+        end)
 
-    local KeyInfo = TabInf:CreateParagraph({
-        Title = "📅 Даты",
-        Content = "Активирован: " .. os.date("%d.%m.%Y %H:%M", keyData.activationDate) .. 
-                  "\nИстекает: " .. os.date("%d.%m.%Y %H:%M", keyData.expirationDate)
-    })
+        local KeyInfo = TabInf:CreateParagraph({
+            Title = "📅 Даты",
+            Content = "Активирован: " .. os.date("%d.%m.%Y %H:%M", keyData.activationDate) .. 
+                      "\nИстекает: " .. os.date("%d.%m.%Y %H:%M", keyData.expirationDate)
+        })
+    else
+        local timerLabel = TabInf:CreateParagraph({
+            Title = "⏱ Статус ключа",
+            Content = "⏳ Ключ не активирован или данные отсутствуют"
+        })
+    end
 
     -- ============================================
     -- ПЕРЕМЕННЫЕ
